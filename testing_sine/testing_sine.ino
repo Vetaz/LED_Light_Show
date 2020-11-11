@@ -13,6 +13,8 @@ static uint8_t currentFreqNum = 0;
 static uint8_t brightnesses[18] = {130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 210, 200, 190, 180, 170, 160, 150, 140};
 static uint8_t currentBrightnessNum = 0;
 
+static uint8_t currentLEDs = 0;
+
 //TODO: volume changes num leds on...
 // Sine wave: y = A sin (k (theta - b)) + c
 // A = Amplitude, k = periodicity factor, b = left/right shift, c = up/down shift
@@ -32,11 +34,9 @@ static uint8_t currentBrightnessNum = 0;
 #define BRIGHTNESS  32 // It can be higher, but keep at 32 for now?
 #define LED_TYPE    WS2812
 #define COLOR_ORDER GRB
-#define UPDATES_PER_SECOND 20 // how fast the LEDs change color/brightness per second.
+#define UPDATES_PER_SECOND 100 // how fast the LEDs change color/brightness per second.
 
 CRGB leds[NUM_LEDS];
-TBlendType    currentBlending;
-CRGBPalette16 currentPalette;
 
 void setup() { 
   delay(3000); // power-up safety delay
@@ -47,19 +47,19 @@ void setup() {
   sineWaveSize = sizeof(sineWave) / sizeof(float);
 }
 
-void FillLEDsFromPaletteColors(uint8_t hue, uint8_t brightness, uint8_t saturation)
+void FillLEDs(uint8_t hue, uint8_t brightness, uint8_t saturation)
 {
   // Brightness from 0-255;
   // Saturation from 0-255;
-
+  currentLEDs++;
   // Turn on a fraction of the LEDs if birghtness is not turned all the way up
   uint8_t adjNumLEDs = brightness / 255 * NUM_LEDS; 
-  for(int i = 0; i < NUM_LEDS; i++) {
+  for(int i = 0; i < currentLEDs % NUM_LEDS; i++) {
     leds[i] = CHSV(hue, saturation, brightness);
   }
-//  for(int i = adjNumLEDs; i < NUM_LEDS; i++) {
-//    leds[i] = CHSV(hue, saturation, 0);
-//  }
+  for(int i = currentLEDs % NUM_LEDS; i < NUM_LEDS; i++) {
+    leds[i] = CHSV(hue, saturation, 0);
+  }
 }
 
 /* Get the pitch frequency */
@@ -69,10 +69,12 @@ float getFreq() {
 }
 
 /* Get the volume amplitude 
-   returns a number from 0 to 5 */
+   returns a number from 0 to 255 for brightness */
 uint8_t getBright(){
-  currentBrightnessNum++;
-  return brightnesses[currentBrightnessNum % 19]; // Going through the brightnesses each time this function is called.
+//  currentBrightnessNum++;
+//  return brightnesses[currentBrightnessNum % 19]; // Going through the brightnesses each time this function is called.
+
+  return (volt - 3.3) / (5 - 3.3) * 255;
 }
 
 void loop() { 
@@ -85,16 +87,10 @@ void loop() {
   float freq = getFreq();
   uint8_t brightness = getBright();
 
-  // Changes color according to sample amplitude's absolute value.
-//  if (startIndex >= sineWaveSize) {
-//    startIndex = 0;
-//  }
-//  hue = abs(sineWave[startIndex]) * 359;
-
   // Changes color based on Frequency.
   hue = ((log(freq)/log(2)) - (log(LOWER_FREQ)/log(2))) / ((log(UPPER_FREQ)/log(2)) - (log(LOWER_FREQ)/log(2))) * 250; // For 60 Hz, Hue = 0; for 10 kHz, Hue = 250
   
-  FillLEDsFromPaletteColors(hue, brightness, saturation);
+  FillLEDs(hue, brightness, saturation);
   
   FastLED.show();
   delay(1000 / UPDATES_PER_SECOND);
