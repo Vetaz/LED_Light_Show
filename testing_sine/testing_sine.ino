@@ -40,18 +40,29 @@ void FillLEDs(uint8_t hue, uint8_t brightness, uint8_t saturation, uint8_t numLE
       saturation = 255;
     }
   }
-  
+  fill_solid(leds, TOTAL_NUM_LEDS, CRGB(0,0,0)); // Makes all the LEDS turn off in between fillings.
   for(int i = 0; i < numLEDs; i++) {
     leds[i] = CHSV(hue, saturation, brightness);
   }
 }
+
+// code to help test for Jordi
+static int digitalInput[23] = {100,200,300,450,300,100,500,700,800,1020,1020,800,300,200,100,400,500,700,800,500,400,600,300};
+uint8_t index = 0;
+// end of Jordi's code to help test.
 
 void loop() {
   uint8_t hue = 0;
   static uint8_t saturation = 255;
 
   analogVal = analogRead(analogPin);  // read the input pin, returns 0-1023 based on voltage 0v-5v
-
+  
+  // code to help test for Jordi commented out for you, Sam.
+//   analogVal = digitalInput[index % 23];
+//   index = 1 + index;
+//   Serial.println(analogVal);
+  // end of Jordi's code to help test.
+  
   brightness = (uint8_t)(((float) analogVal / 1023) * 255); //brighter the higher the voltage, casting to float to perform math
   hue = (uint8_t)(((float) analogVal / 1023) * 255); //different hue with differet voltage
   uint8_t numLEDs = (uint8_t)(((float) analogVal / 1023) * TOTAL_NUM_LEDS); //the number of LEDS that should be on based on analog input
