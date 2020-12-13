@@ -6,7 +6,7 @@
 #define LED_TYPE            WS2812
 #define COLOR_ORDER         GRB
 #define UPDATES_PER_SECOND  100     // How fast the LEDs change color/brightness per second.
-#define HIGHEST_VOLTAGE     746     // The cut-off voltage from 0-1023. 
+#define HIGHEST_ANALOG_INPUT_ALLOWED     746     // The cut-off voltage from 0-1023. 
                                     // The lower the number, the more LEDs are lit for a specific voltage.
 
 int analogPin = A3; // Potentiometer wiper (middle terminal) connected to analog pin 3
@@ -31,15 +31,6 @@ void fillLEDs(uint8_t numLEDs)
   uint8_t hue;
   uint8_t brightness;
   
-  // Making sure numLEDs is 0-TOTAL_NUM_LEDS (if voltage reads over 746, fill all LEDs)
-  if (numLEDs < 0 || numLEDs > TOTAL_NUM_LEDS) {
-    if (numLEDs < 0) {
-      numLEDs = 0;
-    } else {
-      numLEDs = 253;
-    }
-  }
- 
   for(int i = 0; i < numLEDs; i++) {
     hue = (uint8_t) ((float)i / TOTAL_NUM_LEDS * 250); // LED colors go from Red (0) to Pink (250)
     brightness = (uint8_t) ((float)i / numLEDs * 55 + 200); // Brightness from 200 to 255.
@@ -74,7 +65,16 @@ void loop() {
   analogVal = analogRead(analogPin);  // Read the input pin, returns 0-1023 based on voltage 0v-5v
 
   // The number of LEDS that should be on based on analog input
-  uint8_t numLEDs = (uint8_t)(((float) analogVal / HIGHEST_VOLTAGE) * TOTAL_NUM_LEDS); 
+  uint8_t numLEDs = (uint8_t)(((float) analogVal / HIGHEST_ANALOG_INPUT_ALLOWED) * TOTAL_NUM_LEDS); 
+
+  // Making sure numLEDs is 0 to TOTAL_NUM_LEDS (if voltage reads over HIGHEST_ANALOG_INPUT_ALLOWED, fill all LEDs)
+  if (numLEDs < 0 || numLEDs > TOTAL_NUM_LEDS) {
+    if (numLEDs < 0) {
+      numLEDs = 0;
+    } else {
+      numLEDs = TOTAL_NUM_LEDS;
+    }
+  }
 
   if (prevNumLEDs < numLEDs) {
     fillLEDs(numLEDs);
